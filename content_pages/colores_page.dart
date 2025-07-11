@@ -308,6 +308,7 @@ class _ColoresPageState extends State<ColoresPage> {
               onTap: () {
                 setState(() {
                   _showImageOverlay = false;
+                  _isPlayingAll = false;
                 });
                 _audioPlayer.stop();
               },
