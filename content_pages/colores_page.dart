@@ -114,7 +114,11 @@ class _ColoresPageState extends State<ColoresPage> {
   }
 
   Future<void> _playAllColors() async {
-    if (!_isPlayingAll || _currentColorIndex >= _colors.length) {
+    if (!_isPlayingAll) {
+      return;
+    }
+
+    if (_currentColorIndex >= _colors.length) {
       setState(() {
         _isPlayingAll = false;
         _showImageOverlay = false;
@@ -124,19 +128,33 @@ class _ColoresPageState extends State<ColoresPage> {
     }
 
     final color = _colors[_currentColorIndex];
+
     setState(() {
       _showImageOverlay = true;
       _currentImagePath = color['image'];
     });
 
-    await _playSound(color['sound']);
+    await _audioPlayer.stop();
 
-    _audioPlayer.onPlayerComplete.listen((_) {
-      Future.delayed(const Duration(milliseconds: 500), () {
+    try {
+      await _audioPlayer.play(AssetSource('sounds/${color['sound']}'));
+      await _audioPlayer.onPlayerComplete.first;
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      setState(() {
         _currentColorIndex++;
-        _playAllColors();
       });
-    });
+
+      if (_isPlayingAll) {
+        _playAllColors();
+      }
+    } catch (e) {
+      print('Error al reproducir: $e');
+      setState(() {
+        _isPlayingAll = false;
+        _currentColorIndex = 0;
+      });
+    }
   }
 
   void _stopPlayingAll() {
@@ -182,7 +200,6 @@ class _ColoresPageState extends State<ColoresPage> {
       ),
       body: Stack(
         children: [
-          // Contenido principal
           SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -286,7 +303,6 @@ class _ColoresPageState extends State<ColoresPage> {
             ),
           ),
 
-          // Overlay de imagen
           if (_showImageOverlay)
             GestureDetector(
               onTap: () {
